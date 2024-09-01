@@ -85,19 +85,23 @@ if (!customElements.get('price-per-item')) {
         return (updatedCartQuantity || updatedCartQuantity === 0) ? updatedCartQuantity : parseInt(this.input.dataset.cartQuantity);
       }
 
-      getVolumePricingArray() {
-        const volumePricing = document.getElementById(`Volume-${this.dataset.sectionId || this.dataset.variantId}`);
-        this.qtyPricePairs = [];
+getVolumePricingArray() {
+  const volumePricing = document.getElementById(`Volume-${this.dataset.sectionId || this.dataset.variantId}`);
+  this.qtyPricePairs = [];
 
-        if (volumePricing) {
-          volumePricing.querySelectorAll('li').forEach(li => {
-            const qty = parseInt(li.querySelector('span:first-child').textContent);
-            const price = (li.querySelector('span:not(:first-child):last-child').dataset.text);
-            this.qtyPricePairs.push([qty, price]);
-          });
-        }
-        this.qtyPricePairs.reverse();
-      }
+  if (volumePricing) {
+    const firstVariant = volumePricing.querySelector('li:first-child');
+    
+    // Extract the pricing information from the first variant
+    if (firstVariant) {
+      const firstVariantQty = parseInt(firstVariant.querySelector('span:first-child').textContent);
+      const firstVariantPrice = (firstVariant.querySelector('span:not(:first-child):last-child').dataset.text);
+      this.qtyPricePairs.push([firstVariantQty, firstVariantPrice]);
+    }
+  }
+  this.qtyPricePairs.reverse();
+}
+
     }
   );
 }

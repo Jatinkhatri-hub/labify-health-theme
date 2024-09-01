@@ -20,22 +20,22 @@
   }
 {%- endstyle -%}
 
-<div class="color-{{ section.settings.color_scheme }} gradient">
+<div class="color-{{ section.settings.color_scheme }} gradient no-js-hidden">
   <product-recommendations
     class="related-products page-width section-{{ section.id }}-padding isolate{% if settings.animations_reveal_on_scroll %} scroll-trigger animate--slide-in{% endif %}"
-    data-url="{{ routes.product_recommendations_url }}?limit={{ section.settings.products_to_show }}"
-    data-section-id="{{ section.id }}"
-    data-product-id="{{ product.id }}"
+    data-url="{{ routes.product_recommendations_url }}?section_id={{ section.id }}&product_id={{ product.id }}&limit={{ section.settings.products_to_show }}"
   >
     {% if recommendations.performed and recommendations.products_count > 0 %}
+      {% assign excluded_collections = 'specialty-lab-panels' %}
+      {% assign current_collections = product.collections %}
+{% unless excluded_collections contains current_collections[1].handle %}
       <h2 class="related-products__heading inline-richtext {{ section.settings.heading_size }}">
         {{ section.settings.heading }}
       </h2>
       <ul
-        class="grid product-grid grid--{{ section.settings.columns_desktop }}-col-desktop grid--{{ section.settings.columns_mobile }}-col-tablet-down"
+        class="grid related-products-slider product-grid grid--{{ section.settings.columns_desktop }}-col-desktop grid--{{ section.settings.columns_mobile }}-col-tablet-down"
         role="list"
       >
-        {% assign skip_card_product_styles = false %}
         {% for recommendation in recommendations.products %}
           <li class="grid__item">
             {% render 'card-product',
@@ -44,25 +44,59 @@
               image_shape: section.settings.image_shape,
               show_secondary_image: section.settings.show_secondary_image,
               show_vendor: section.settings.show_vendor,
-              show_rating: section.settings.show_rating,
-              skip_styles: skip_card_product_styles
+              show_quick_add: section.settings.enable_quick_add,
+              show_rating: section.settings.show_rating
             %}
           </li>
-          {%- assign skip_card_product_styles = true -%}
         {% endfor %}
       </ul>
+  {% endunless %}
     {% endif %}
   </product-recommendations>
   {% if section.settings.image_shape == 'arch' %}
-    {{ 'mask-arch.svg' | inline_asset_content }}
+    {% render 'mask-arch' %}
   {%- endif -%}
 </div>
+{%- if product.metafields.custom.short_description != blank -%}
+  <h2 class="discription-title h2">Description</h2>
+   <div class="product__description product-description-details rte quick-add-hidden">
+  
+    <p> {{ product.metafields.custom.short_description | escape }}</p>
+  </div>
+{%- endif -%}
+{% if product.metafields.custom.chat !=blank %}
+ 
+  {% endif %}
+{% if  product.metafields.custom.bundle_includess != blank or product.metafields.custom.bundle_includes_right != blank  %}
+<div class="bundle-wrapper bundle-section">
+    <h3 class="bundle-title {{ section.settings.heading_size }}"> {{ section.settings.title }}</h3>
+    <p class="bundle-paragraph"></p>
+    {%- if section.settings.text != blank -%}
+    <div class="bundle-paragraph">{{ section.settings.text }}</div>
+    {%- endif -%}
+   <div class="bundle-content">
+      <div class="bundle-left">{{ product.metafields.custom.bundle_includess | metafield_tag  }}</div>
+      <div class="bundle-right">{{ product.metafields.custom.bundle_includes_right | metafield_tag  }}</div>
+    </div>
+</div>
+
+ <li class="accordion-li eligibility-details">
+   <summary><h3 class="accordion__title inline-richtext h4">{{ section.settings.mail_heading2 }}</h3>
+   </summary>
+   {%- if product.metafields.custom.eligibility != blank -%}
+   <div class="answer">{{  product.metafields.custom.eligibility | escape }}</div>
+     {%- endif -%}
+ </li>
+<li class="accordion-li faq-content">
+  <summary><h3 class="accordion__title inline-richtext h4"><a href="https://labify-health.myshopify.com/pages/faqs"> {{ section.settings.mail_heading3 }}</a></h3></summary>
+</li>
+{% endif %}
 
 {% schema %}
 {
   "name": "t:sections.related-products.name",
   "tag": "section",
-  "class": "section",
+  "class": "section related-products-section",
   "settings": [
     {
       "type": "paragraph",
@@ -71,7 +105,7 @@
     {
       "type": "inline_richtext",
       "id": "heading",
-      "default": "t:sections.related-products.settings.paragraph__1.default",
+      "default": "You may also like",
       "label": "t:sections.related-products.settings.heading.label"
     },
     {
@@ -89,14 +123,6 @@
         {
           "value": "h0",
           "label": "t:sections.all.heading_size.options__3.label"
-        },
-        {
-          "value": "hxl",
-          "label": "t:sections.all.heading_size.options__4.label"
-        },
-        {
-          "value": "hxxl",
-          "label": "t:sections.all.heading_size.options__5.label"
         }
       ],
       "default": "h1",
@@ -115,7 +141,7 @@
       "type": "range",
       "id": "columns_desktop",
       "min": 1,
-      "max": 6,
+      "max": 5,
       "step": 1,
       "default": 4,
       "label": "t:sections.related-products.settings.columns_desktop.label"
@@ -125,7 +151,7 @@
       "id": "color_scheme",
       "label": "t:sections.all.colors.label",
       "info": "t:sections.all.colors.has_cards_info",
-      "default": "scheme-1"
+      "default": "background-1"
     },
     {
       "type": "header",
@@ -211,6 +237,12 @@
       "label": "t:sections.related-products.settings.show_rating.label",
       "info": "t:sections.related-products.settings.show_rating.info"
     },
+     {
+      "type": "checkbox",
+      "id": "enable_quick_add",
+      "default": false,
+      "label": "t:sections.main-collection-product-grid.settings.enable_quick_buy.label"
+    },
     {
       "type": "header",
       "content": "t:sections.related-products.settings.header_mobile.content"
@@ -254,7 +286,32 @@
       "unit": "px",
       "label": "t:sections.all.padding.padding_bottom",
       "default": 36
-    }
+    }, 
+    {
+      "type": "inline_richtext",
+      "id": "title",
+      "label": "t:sections.multicolumn.settings.title.label"
+    },
+       {
+      "type": "richtext",
+      "id": "text",
+      "label": "Bundle Text"
+    },
+     {
+          "type": "inline_richtext",
+          "id": "mail_heading1",
+          "label": "Heading"
+        },
+       {
+          "type": "inline_richtext",
+          "id": "mail_heading2",
+          "label": "Heading"
+        },
+       {
+          "type": "inline_richtext",
+          "id": "mail_heading3",
+          "label": "Heading"
+        }
   ]
 }
 {% endschema %}
